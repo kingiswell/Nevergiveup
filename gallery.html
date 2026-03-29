@@ -113,14 +113,7 @@
 			<video class="modal-content" id="vidPreview" controls style="display:none;"></video>
 		</div>
 
-		<script src="assets/js/jquery.min.js"></script>
-			<script src="assets/js/jquery.dropotron.min.js"></script>
-			<script src="assets/js/browser.min.js"></script>
-			<script src="assets/js/breakpoints.min.js"></script>
-			<script src="assets/js/util.js"></script>
-			<script src="assets/js/main.js"></script>
-
-			<script>
+	<script>
 				// 1. Your exact media list
 				const mediaFiles = [
 					{ type: 'image', filename: '1.jpeg' },
@@ -181,24 +174,35 @@
 						// Click to open Image
 						mediaElement.onclick = function() {
 							modal.style.display = "block";
+							modalVid.style.display = "none";
+							modalVid.pause(); // Ensure video is stopped when an image is clicked
+							
 							modalImg.src = fullPath;
 							modalImg.style.display = "block";
-							modalVid.style.display = "none";
 						}
 					} 
 					else if (media.type === 'video') {
 						mediaElement = document.createElement('video');
 						mediaElement.src = fullPath;
 						mediaElement.className = 'gallery-item';
-						mediaElement.muted = true; // Mute grid videos
+						mediaElement.muted = true; // Muted in grid so it doesn't auto-play sound
 
 						// Click to open Video
 						mediaElement.onclick = function() {
 							modal.style.display = "block";
-							modalVid.src = fullPath;
-							modalVid.style.display = "block";
 							modalImg.style.display = "none";
-							modalVid.play(); // Auto-play when opened
+							
+							modalVid.style.display = "block";
+							modalVid.src = fullPath;
+							modalVid.load(); // CRITICAL FIX: Forces the browser to load the new video data
+							
+							// Attempt to auto-play. If the browser blocks it, it will fail silently and wait for the user to press play.
+							let playPromise = modalVid.play();
+							if (playPromise !== undefined) {
+								playPromise.catch(error => {
+									console.log("Browser prevented auto-play. User must click play manually.");
+								});
+							}
 						}
 					}
 
@@ -217,8 +221,9 @@
 
 				function closeModalFunc() {
 					modal.style.display = "none";
-					modalVid.pause(); // Stop video if it was playing
-					modalVid.src = ""; // Clear source so it doesn't keep loading in background
+					modalVid.pause(); 
+					modalVid.removeAttribute('src'); // CRITICAL FIX: Fully unloads the video source
+					modalVid.load(); // Resets the video player completely
 				}
 			</script>
 	</body>
