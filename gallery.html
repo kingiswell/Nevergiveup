@@ -15,15 +15,52 @@
 			}
 			.gallery-item {
 				width: 100%;
-				height: 250px; /* Uniform height for both images and videos */
-				object-fit: cover; /* Prevents stretching */
+				height: 250px;
+				object-fit: cover;
 				border-radius: 8px;
 				box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 				transition: transform 0.3s ease;
-				background-color: #000; /* Dark background for videos */
+				background-color: #000;
+				cursor: pointer; /* Makes it clear they are clickable */
 			}
-			img.gallery-item:hover {
-				transform: scale(1.05); /* Zoom effect only on images */
+			img.gallery-item:hover, video.gallery-item:hover {
+				transform: scale(1.05);
+			}
+
+			/* --- NEW: Lightbox / Modal Styles --- */
+			.modal {
+				display: none; /* Hidden by default */
+				position: fixed;
+				z-index: 10000; /* Make sure it sits on top of everything */
+				padding-top: 50px;
+				left: 0;
+				top: 0;
+				width: 100%;
+				height: 100%;
+				background-color: rgba(0, 0, 0, 0.9); /* Dark background */
+			}
+			.modal-content {
+				margin: auto;
+				display: block;
+				max-width: 90%;
+				max-height: 80vh; /* Prevents it from being taller than the screen */
+				border-radius: 8px;
+			}
+			/* The Close Button */
+			.close {
+				position: absolute;
+				top: 15px;
+				right: 35px;
+				color: #f1f1f1;
+				font-size: 40px;
+				font-weight: bold;
+				cursor: pointer;
+				transition: 0.3s;
+			}
+			.close:hover,
+			.close:focus {
+				color: #bbb;
+				text-decoration: none;
 			}
 		</style>
 	</head>
@@ -31,12 +68,11 @@
 		<div id="page-wrapper">
 
 			<section id="header" class="wrapper">
-					<div id="logo">
+						<div id="logo">
 							<h1><a href="index.html">NEVER GIVE UP</a></h1>
 							<p>Client Results & Training Gallery</p>
 						</div>
-
-					<nav id="nav">
+						<nav id="nav">
 							<ul>
 								<li><a href="index.html">Home</a></li>
 								<li><a href="index.html#main">About</a></li>
@@ -52,11 +88,10 @@
 					<div class="container">
 						<header class="style1">
 							<h2>Success Stories & Training in Action</h2>
-							<p>A look into the Never Give Up community.</p>
+							<p>Click any image or video to view it full size.</p>
 						</header>
 
 						<div class="gallery-grid" id="dynamic-gallery"></div>
-						
 					</div>
 				</section>
 
@@ -72,6 +107,12 @@
 				</section>
 		</div>
 
+		<div id="mediaModal" class="modal">
+			<span class="close" id="closeModal">&times;</span>
+			<img class="modal-content" id="imgPreview" style="display:none;">
+			<video class="modal-content" id="vidPreview" controls style="display:none;"></video>
+		</div>
+
 		<script src="assets/js/jquery.min.js"></script>
 			<script src="assets/js/jquery.dropotron.min.js"></script>
 			<script src="assets/js/browser.min.js"></script>
@@ -80,69 +121,105 @@
 			<script src="assets/js/main.js"></script>
 
 			<script>
-				// 1. Define your media here!
-					const mediaFiles = [
-					    { type: 'image', filename: '1.jpeg' },
-					    { type: 'image', filename: '5.jpeg' },
-					    { type: 'image', filename: '7.jpeg' },
-					    { type: 'image', filename: '8.jpeg' },
-					    { type: 'image', filename: '9.jpeg' },
-					    { type: 'image', filename: '11.jpeg' },
-					    { type: 'image', filename: '12.jpeg' },
-					    { type: 'image', filename: '13.jpeg' },
-					    { type: 'image', filename: '14.jpeg' },
-					    { type: 'image', filename: '15.jpeg' },
-					    { type: 'image', filename: '16.jpeg' },
-					    { type: 'image', filename: '17.jpeg' },
-					    { type: 'image', filename: '18.jpeg' },
-					    { type: 'image', filename: '19.jpeg' },
-					    { type: 'image', filename: '20.jpeg' },
-					    { type: 'video', filename: '111.mp4' },
-					    { type: 'image', filename: '221.jpeg' },
-					    { type: 'image', filename: '222.jpeg' },
-					    { type: 'video', filename: '222.mp4' },
-					    { type: 'video', filename: '333.mp4' },
-					    { type: 'video', filename: '444.mp4' },
-					    { type: 'image', filename: '1111.jpeg' },
-					    { type: 'image', filename: '11111.jpeg' },
-					    { type: 'image', filename: 'WhatsApp Image 2026-01-14 at 20.27.12.jpeg' },
-					    { type: 'image', filename: 'WhatsApp Image 2026-01-25 at 23.02.56.jpeg' },
-					    { type: 'image', filename: 'WhatsApp Image 2026-01-25 at 23.02.57.jpeg' },
-					    { type: 'image', filename: 'WhatsApp Image 2026-02-05 at 1.jpeg' },
-					    { type: 'image', filename: 'WhatsApp Image 2026-02-05 at 13.47.25.jpeg' },
-					    { type: 'image', filename: 'WhatsApp Image 2026-02-05 at 13.47.26.jpeg' },
-					    { type: 'image', filename: 'WhatsApp Image 2026-02-05 at 13.47.27.jpeg' },
-					    { type: 'image', filename: 'WhatsApp Image 2026-02-05 at 13.47.28.jpeg' },
-					    { type: 'image', filename: 'WhatsApp Image 2026-02-05 at 13.52.21.jpeg' },
-					    { type: 'video', filename: 'WhatsApp Video 2026-01-14 at 20.32.26.mp4' },
-					    { type: 'video', filename: 'WhatsApp Video 2026-01-14 at 20.32.27.mp4' }
-					];
+				// 1. Your exact media list
+				const mediaFiles = [
+					{ type: 'image', filename: '1.jpeg' },
+					{ type: 'image', filename: '5.jpeg' },
+					{ type: 'image', filename: '7.jpeg' },
+					{ type: 'image', filename: '8.jpeg' },
+					{ type: 'image', filename: '9.jpeg' },
+					{ type: 'image', filename: '11.jpeg' },
+					{ type: 'image', filename: '12.jpeg' },
+					{ type: 'image', filename: '13.jpeg' },
+					{ type: 'image', filename: '14.jpeg' },
+					{ type: 'image', filename: '15.jpeg' },
+					{ type: 'image', filename: '16.jpeg' },
+					{ type: 'image', filename: '17.jpeg' },
+					{ type: 'image', filename: '18.jpeg' },
+					{ type: 'image', filename: '19.jpeg' },
+					{ type: 'image', filename: '20.jpeg' },
+					{ type: 'video', filename: '111.mp4' },
+					{ type: 'image', filename: '221.jpeg' },
+					{ type: 'image', filename: '222.jpeg' },
+					{ type: 'video', filename: '222.mp4' },
+					{ type: 'video', filename: '333.mp4' },
+					{ type: 'video', filename: '444.mp4' },
+					{ type: 'image', filename: '1111.jpeg' },
+					{ type: 'image', filename: '11111.jpeg' },
+					{ type: 'image', filename: 'WhatsApp Image 2026-01-14 at 20.27.12.jpeg' },
+					{ type: 'image', filename: 'WhatsApp Image 2026-01-25 at 23.02.56.jpeg' },
+					{ type: 'image', filename: 'WhatsApp Image 2026-01-25 at 23.02.57.jpeg' },
+					{ type: 'image', filename: 'WhatsApp Image 2026-02-05 at 1.jpeg' },
+					{ type: 'image', filename: 'WhatsApp Image 2026-02-05 at 13.47.25.jpeg' },
+					{ type: 'image', filename: 'WhatsApp Image 2026-02-05 at 13.47.26.jpeg' },
+					{ type: 'image', filename: 'WhatsApp Image 2026-02-05 at 13.47.27.jpeg' },
+					{ type: 'image', filename: 'WhatsApp Image 2026-02-05 at 13.47.28.jpeg' },
+					{ type: 'image', filename: 'WhatsApp Image 2026-02-05 at 13.52.21.jpeg' },
+					{ type: 'video', filename: 'WhatsApp Video 2026-01-14 at 20.32.26.mp4' },
+					{ type: 'video', filename: 'WhatsApp Video 2026-01-14 at 20.32.27.mp4' }
+				];
 
-				// 2. The code below does the heavy lifting to display them
 				const galleryContainer = document.getElementById('dynamic-gallery');
-				const folderPath = 'gallery/'; // The folder where your files are stored
+				const folderPath = 'gallery/'; 
 
+				// Modal Elements
+				const modal = document.getElementById('mediaModal');
+				const modalImg = document.getElementById('imgPreview');
+				const modalVid = document.getElementById('vidPreview');
+				const spanClose = document.getElementById('closeModal');
+
+				// 2. Build the gallery and add click events
 				mediaFiles.forEach(media => {
 					let mediaElement;
+					let fullPath = folderPath + media.filename;
 
 					if (media.type === 'image') {
 						mediaElement = document.createElement('img');
-						mediaElement.src = folderPath + media.filename;
-						mediaElement.alt = "Never Give Up Training Gallery";
+						mediaElement.src = fullPath;
 						mediaElement.className = 'gallery-item';
+						
+						// Click to open Image
+						mediaElement.onclick = function() {
+							modal.style.display = "block";
+							modalImg.src = fullPath;
+							modalImg.style.display = "block";
+							modalVid.style.display = "none";
+						}
 					} 
 					else if (media.type === 'video') {
 						mediaElement = document.createElement('video');
-						mediaElement.src = folderPath + media.filename;
+						mediaElement.src = fullPath;
 						mediaElement.className = 'gallery-item';
-						mediaElement.controls = true; // Adds play/pause buttons
-						mediaElement.muted = true;    // Mutes by default (good for auto-play scenarios)
+						mediaElement.muted = true; // Mute grid videos
+
+						// Click to open Video
+						mediaElement.onclick = function() {
+							modal.style.display = "block";
+							modalVid.src = fullPath;
+							modalVid.style.display = "block";
+							modalImg.style.display = "none";
+							modalVid.play(); // Auto-play when opened
+						}
 					}
 
 					if (mediaElement) {
 						galleryContainer.appendChild(mediaElement);
 					}
 				});
+
+				// 3. Close the modal when clicking the 'X' or the background
+				spanClose.onclick = closeModalFunc;
+				window.onclick = function(event) {
+					if (event.target == modal) {
+						closeModalFunc();
+					}
+				}
+
+				function closeModalFunc() {
+					modal.style.display = "none";
+					modalVid.pause(); // Stop video if it was playing
+					modalVid.src = ""; // Clear source so it doesn't keep loading in background
+				}
 			</script>
 	</body>
 </html>
