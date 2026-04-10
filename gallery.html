@@ -21,32 +21,31 @@
 				box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 				transition: transform 0.3s ease;
 				background-color: #000;
-				cursor: pointer; /* Makes it clear they are clickable */
+				cursor: pointer;
 			}
 			img.gallery-item:hover, video.gallery-item:hover {
 				transform: scale(1.05);
 			}
 
-			/* --- NEW: Lightbox / Modal Styles --- */
+			/* --- Modal / Lightbox Styles --- */
 			.modal {
-				display: none; /* Hidden by default */
+				display: none; 
 				position: fixed;
-				z-index: 10000; /* Make sure it sits on top of everything */
+				z-index: 10000; 
 				padding-top: 50px;
 				left: 0;
 				top: 0;
 				width: 100%;
 				height: 100%;
-				background-color: rgba(0, 0, 0, 0.9); /* Dark background */
+				background-color: rgba(0, 0, 0, 0.9);
 			}
 			.modal-content {
 				margin: auto;
 				display: block;
 				max-width: 90%;
-				max-height: 80vh; /* Prevents it from being taller than the screen */
+				max-height: 80vh;
 				border-radius: 8px;
 			}
-			/* The Close Button */
 			.close {
 				position: absolute;
 				top: 15px;
@@ -56,11 +55,38 @@
 				font-weight: bold;
 				cursor: pointer;
 				transition: 0.3s;
+				z-index: 10001;
 			}
-			.close:hover,
-			.close:focus {
+			.close:hover, .close:focus {
 				color: #bbb;
 				text-decoration: none;
+			}
+
+			/* --- NEW: Navigation Arrows --- */
+			.nav-arrow {
+				cursor: pointer;
+				position: absolute;
+				top: 50%;
+				width: auto;
+				padding: 16px;
+				margin-top: -50px;
+				color: white;
+				font-weight: bold;
+				font-size: 40px;
+				transition: 0.3s ease;
+				border-radius: 0 3px 3px 0;
+				user-select: none;
+				z-index: 10001;
+			}
+			.nav-arrow.prev { left: 20px; }
+			.nav-arrow.next { right: 20px; border-radius: 3px 0 0 3px; }
+			.nav-arrow:hover { background-color: rgba(0, 0, 0, 0.8); }
+			
+			/* Adjust arrow positioning for mobile screens */
+			@media only screen and (max-width: 700px) {
+				.nav-arrow { font-size: 30px; padding: 10px; }
+				.nav-arrow.prev { left: 0px; }
+				.nav-arrow.next { right: 0px; }
 			}
 		</style>
 	</head>
@@ -88,7 +114,7 @@
 					<div class="container">
 						<header class="style1">
 							<h2>Success Stories & Training in Action</h2>
-							<p>Click any image or video to view it full size.</p>
+							<p>Click to expand. Use your arrow keys to scroll through.</p>
 						</header>
 
 						<div class="gallery-grid" id="dynamic-gallery"></div>
@@ -109,12 +135,22 @@
 
 		<div id="mediaModal" class="modal">
 			<span class="close" id="closeModal">&times;</span>
+			
+			<a class="nav-arrow prev" onclick="changeMedia(-1)">&#10094;</a>
+			<a class="nav-arrow next" onclick="changeMedia(1)">&#10095;</a>
+
 			<img class="modal-content" id="imgPreview" style="display:none;">
 			<video class="modal-content" id="vidPreview" controls style="display:none;"></video>
 		</div>
 
-	<script>
-				// 1. Your exact media list
+		<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.dropotron.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+			<script>
 				const mediaFiles = [
 					{ type: 'image', filename: '1.jpeg' },
 					{ type: 'image', filename: '5.jpeg' },
@@ -155,64 +191,103 @@
 				const galleryContainer = document.getElementById('dynamic-gallery');
 				const folderPath = 'gallery/'; 
 
-				// Modal Elements
 				const modal = document.getElementById('mediaModal');
 				const modalImg = document.getElementById('imgPreview');
 				const modalVid = document.getElementById('vidPreview');
 				const spanClose = document.getElementById('closeModal');
+				
+				// Keep track of what we are currently looking at
+				let currentIndex = 0;
 
-				// 2. Build the gallery and add click events
-				mediaFiles.forEach(media => {
+				// 1. Build the initial grid
+				mediaFiles.forEach((media, index) => {
 					let mediaElement;
 					let fullPath = folderPath + media.filename;
 
 					if (media.type === 'image') {
 						mediaElement = document.createElement('img');
 						mediaElement.src = fullPath;
-						mediaElement.className = 'gallery-item';
-						
-						// Click to open Image
-						mediaElement.onclick = function() {
-							modal.style.display = "block";
-							modalVid.style.display = "none";
-							modalVid.pause(); // Ensure video is stopped when an image is clicked
-							
-							modalImg.src = fullPath;
-							modalImg.style.display = "block";
-						}
-					} 
-					else if (media.type === 'video') {
+					} else if (media.type === 'video') {
 						mediaElement = document.createElement('video');
 						mediaElement.src = fullPath;
-						mediaElement.className = 'gallery-item';
-						mediaElement.muted = true; // Muted in grid so it doesn't auto-play sound
-
-						// Click to open Video
-						mediaElement.onclick = function() {
-							modal.style.display = "block";
-							modalImg.style.display = "none";
-							
-							modalVid.style.display = "block";
-							modalVid.src = fullPath;
-							modalVid.load(); // CRITICAL FIX: Forces the browser to load the new video data
-							
-							// Attempt to auto-play. If the browser blocks it, it will fail silently and wait for the user to press play.
-							let playPromise = modalVid.play();
-							if (playPromise !== undefined) {
-								playPromise.catch(error => {
-									console.log("Browser prevented auto-play. User must click play manually.");
-								});
-							}
-						}
+						mediaElement.muted = true;
 					}
 
 					if (mediaElement) {
+						mediaElement.className = 'gallery-item';
+						// Tell the click event exactly which index it represents
+						mediaElement.onclick = function() {
+							openModal(index); 
+						}
 						galleryContainer.appendChild(mediaElement);
 					}
 				});
 
-				// 3. Close the modal when clicking the 'X' or the background
+				// 2. Function to Open Modal at a specific index
+				function openModal(index) {
+					currentIndex = index;
+					modal.style.display = "block";
+					updateModalContent();
+				}
+
+				// 3. Function to Change Media (Next/Prev)
+				function changeMedia(direction) {
+					currentIndex += direction;
+					
+					// Loop back to the beginning or end if we go out of bounds
+					if (currentIndex >= mediaFiles.length) {
+						currentIndex = 0;
+					} else if (currentIndex < 0) {
+						currentIndex = mediaFiles.length - 1;
+					}
+					
+					updateModalContent();
+				}
+
+				// 4. Function that actually swaps the picture/video on screen
+				function updateModalContent() {
+					let media = mediaFiles[currentIndex];
+					let fullPath = folderPath + media.filename;
+
+					// Always pause and clear video when swapping
+					modalVid.pause();
+					modalVid.removeAttribute('src');
+					modalVid.load();
+
+					if (media.type === 'image') {
+						modalVid.style.display = "none";
+						modalImg.src = fullPath;
+						modalImg.style.display = "block";
+					} else if (media.type === 'video') {
+						modalImg.style.display = "none";
+						modalVid.style.display = "block";
+						modalVid.src = fullPath;
+						modalVid.load();
+						
+						let playPromise = modalVid.play();
+						if (playPromise !== undefined) {
+							playPromise.catch(error => { console.log("Auto-play prevented."); });
+						}
+					}
+				}
+
+				// 5. Keyboard Events (Arrow Keys and Escape)
+				document.addEventListener('keydown', function(event) {
+					// Only trigger if the modal is currently open
+					if (modal.style.display === "block") {
+						if (event.key === "ArrowLeft") {
+							changeMedia(-1);
+						} else if (event.key === "ArrowRight") {
+							changeMedia(1);
+						} else if (event.key === "Escape") {
+							closeModalFunc();
+						}
+					}
+				});
+
+				// 6. Close Modal Logic
 				spanClose.onclick = closeModalFunc;
+				// Close if clicking the dark background (but not the arrows/image)
 				window.onclick = function(event) {
 					if (event.target == modal) {
 						closeModalFunc();
@@ -222,8 +297,8 @@
 				function closeModalFunc() {
 					modal.style.display = "none";
 					modalVid.pause(); 
-					modalVid.removeAttribute('src'); // CRITICAL FIX: Fully unloads the video source
-					modalVid.load(); // Resets the video player completely
+					modalVid.removeAttribute('src'); 
+					modalVid.load(); 
 				}
 			</script>
 	</body>
