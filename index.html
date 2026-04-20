@@ -143,16 +143,24 @@
 							<div class="col-6 col-12-medium">
 
 								<section>
-										<form method="post" action="#">
+										<form action="https://api.web3forms.com/submit" method="POST">
+	
+											<!-- 1. The Magic Key (Replace the value below with your actual key) -->
+											<input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE">
+										
+											<!-- 2. The Spam Trap (Hidden from users, but stops robot spam) -->
+											<input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+										
+											<!-- 3. The Actual Form Fields -->
 											<div class="row gtr-50">
 												<div class="col-6 col-12-small">
-													<input type="text" name="name" id="contact-name" placeholder="Name" />
+													<input type="text" name="name" id="contact-name" placeholder="Name" required />
 												</div>
 												<div class="col-6 col-12-small">
-													<input type="text" name="email" id="contact-email" placeholder="Email" />
+													<input type="email" name="email" id="contact-email" placeholder="Email" required />
 												</div>
 												<div class="col-12">
-													<textarea name="message" id="contact-message" placeholder="Tell me about your goals and where you're based in the UK..." rows="4"></textarea>
+													<textarea name="message" id="contact-message" placeholder="Tell me about your goals and where you're based in the UK..." rows="4" required></textarea>
 												</div>
 												<div class="col-12">
 													<ul class="actions">
