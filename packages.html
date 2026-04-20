@@ -145,7 +145,15 @@
 							<div class="col-8 col-12-medium imp-medium">
 
 								<section>
-										<form method="post" action="#">
+									<form action="https://api.web3forms.com/submit" method="POST">
+											
+											<!-- 1. The Magic Key (Replace the value below with your actual key) -->
+											<input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE">
+										
+											<!-- 2. The Spam Trap (Hidden from users, but stops robot spam) -->
+											<input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+										
+											<!-- 3. The Actual Form Fields -->
 											<div class="row gtr-50">
 												<div class="col-6 col-12-small">
 													<input type="text" name="name" id="contact-name" placeholder="Name" required />
@@ -154,20 +162,11 @@
 													<input type="email" name="email" id="contact-email" placeholder="Email" required />
 												</div>
 												<div class="col-12">
-													<select name="interest" id="contact-interest" style="appearance: auto; padding: 0.75em; border-radius: 6px; border: solid 1px #e5e5e5; width: 100%; color: #888;">
-														<option value="" disabled selected>Which service are you interested in?</option>
-														<option value="1-to-1 PT">1-to-1 Personal Training (Local)</option>
-														<option value="Online Coaching">Online Coaching (UK-Wide)</option>
-														<option value="Lifestyle">Lifestyle & Habit Coaching</option>
-														<option value="Not Sure">Not sure yet / Need advice</option>
-													</select>
+													<textarea name="message" id="contact-message" placeholder="Tell me about your goals and where you're based in the UK..." rows="4" required></textarea>
 												</div>
 												<div class="col-12">
-													<textarea name="message" id="contact-message" placeholder="Tell me about your goals, past training, and any worries you have..." rows="4" required></textarea>
-												</div>
-												<div class="col-12">
-													<ul class="actions aln-center">
-														<li><input type="submit" class="style1 large" value="Send Enquiry & Arrange Free Call" /></li>
+													<ul class="actions">
+														<li><input type="submit" class="style1" value="Send Enquiry" /></li>
 													</ul>
 												</div>
 											</div>
